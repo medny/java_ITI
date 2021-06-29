@@ -1,0 +1,112 @@
+package Titanic.dataprep;
+
+import tech.tablesaw.api.*;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+public class TitanicData {
+    Table titanicData;
+    String dataPath = "src/main/resources/data/titanic.csv";
+
+    public TitanicData() 
+    {
+        
+    }
+
+    public static void main(String[] args) 
+    {
+        TitanicData tda = new TitanicData ();
+        try 
+        {
+            tda.titanicData = tda.loadDataFromCVS (tda.dataPath);
+            System.out.println ("test1");
+            String structure = tda.getDataInfoStructure (tda.titanicData);
+            System.out.println ("test2");
+            System.out.println (structure);
+            System.out.println ("test3");
+            System.in.read ();
+            System.out.println ("test4");
+            String summary = tda.getDataSummary (tda.titanicData);
+            System.out.println ("test5");
+            System.out.println (summary);
+            System.out.println ("test6");
+            System.in.read ();
+            Table dataWithDate = tda.addDateColumnToData (tda.titanicData);
+            System.out.println ("=====================================================================================");
+            System.out.println (dataWithDate.structure ());
+            System.in.read ();
+            //Sorting on the added Date Field
+            Table sortedData = dataWithDate.sortAscendingOn ("Fake Date");
+
+            //getting the first 10 rows
+            System.out.println ("Printing the first rows of the table");
+            System.in.read ();
+            Table firstTenRows = sortedData.first (50);
+
+            System.out.println (firstTenRows);
+            System.in.read ();
+            
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            Table mappedData = tda.mapTextColumnToNumber (tda.titanicData);
+            Table firstFiveRows = mappedData.first (5);
+            System.out.println ("=====================================================================================");
+            System.out.println (firstFiveRows);
+        }
+        catch (IOException e) 
+        {
+            e.printStackTrace ();
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///  Load Data From CSV File
+    public Table loadDataFromCVS(String path) throws IOException 
+    {
+        Table titanicData = Table.read ().csv (path);
+        return titanicData;
+    }
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// get the structure of the data
+    public String getDataInfoStructure(Table data) 
+    {
+        Table dataStructure = data.structure ();
+        return dataStructure.toString ();
+    }
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //get Data Summary
+    public String getDataSummary(Table data) 
+    {
+        Table summary = data.summary ();
+        return summary.toString ();
+    }
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //Adding Columns
+    public Table addDateColumnToData(Table data) 
+    {
+        int rowCount = data.rowCount ();
+        List<LocalDate> dateList = new ArrayList<LocalDate> ();
+        for (int i = 0; i < rowCount; i++) 
+        {
+            dateList.add (LocalDate.of (2021, 3, i % 31 == 0 ? 1 : i % 31));
+        }
+        DateColumn dateColumn = DateColumn.create ("Fake Date", dateList);
+        data.insertColumn (data.columnCount (), dateColumn);
+        return data;
+    }
+    public Table mapTextColumnToNumber(Table data) {
+        NumberColumn mappedGenderColumn = null;
+        StringColumn gender = (StringColumn) data.column ("Sex");
+        List<Number> mappedGenderValues = new ArrayList<Number> ();
+        for (String v : gender) {
+            if ((v != null) && (v.equals ("female"))) {
+                mappedGenderValues.add (new Double (1));
+            } else {
+                mappedGenderValues.add (new Double (0));
+            }
+        }
+        mappedGenderColumn = DoubleColumn.create ("gender", mappedGenderValues);
+        data.addColumns (mappedGenderColumn);
+        return data;
+    }
+}
